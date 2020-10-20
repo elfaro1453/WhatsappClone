@@ -38,6 +38,10 @@ class MainActivity : AppCompatActivity() {
         view_pager.adapter = viewPagerAdapter
         tab_layout.setupWithViewPager(view_pager)
 
+        mAuth = FirebaseAuth.getInstance()
+        userId = mAuth.currentUser?.uid.toString()
+        userRef = FirebaseDatabase.getInstance().reference.child("Users").child(userId)
+
         userListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
@@ -57,10 +61,6 @@ class MainActivity : AppCompatActivity() {
             }
 
         }
-
-        mAuth = FirebaseAuth.getInstance()
-        userId = mAuth.currentUser?.uid.toString()
-        userRef = FirebaseDatabase.getInstance().reference.child("Users").child(userId)
         userRef.addValueEventListener(userListener)
     }
 
@@ -134,9 +134,7 @@ class MainActivity : AppCompatActivity() {
             titles.add(title)
         }
 
-        override fun getCount(): Int {
-            return fragments.size
-        }
+        override fun getCount(): Int = fragments.size
 
         override fun getItem(position: Int): Fragment {
             return fragments[position]
