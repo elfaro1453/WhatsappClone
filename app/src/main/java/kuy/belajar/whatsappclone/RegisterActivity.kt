@@ -22,7 +22,6 @@ class RegisterActivity : AppCompatActivity() {
         setContentView(R.layout.activity_register)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        mAuth = FirebaseAuth.getInstance()
 
         btn_register.setOnClickListener {
             val username = input_username.text.toString()
@@ -42,35 +41,41 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun registerUser(username: String, email: String, password: String) {
+        mAuth = FirebaseAuth.getInstance()
         if (username.isNotBlank() && email.isNotBlank() && password.isNotBlank()) {
-            mAuth.createUserWithEmailAndPassword(email, password).addOnCompleteListener {
-                if (it.isSuccessful) {
-                    userId = mAuth.currentUser?.uid.toString()
-                    dbRef = FirebaseDatabase.getInstance().reference.child("Users").child(userId)
+            mAuth.createUserWithEmailAndPassword(email, password)
+                .addOnCompleteListener {
+                    if (it.isSuccessful) {
+                        userId = mAuth.currentUser?.uid as String
 
-                    val newUser = User(
-                        uid = userId, username = username,
-                        search = username.toLowerCase(Locale.ROOT), status = "online"
-                    )
-                    dbRef.setValue(newUser).addOnCompleteListener {
-                        if (it.isSuccessful) {
-                            val intentMain = Intent(this, MainActivity::class.java)
-                            intentMain.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
-                            startActivity(intentMain)
-                            toast("User baru telah dibuat.")
-                            finish()
-                        } else {
-                            it.exception?.message?.let {
-                                toast("Gagal mendaftarkan User.\nError : $it")
+                        dbRef =
+                            FirebaseDatabase.getInstance().reference.child("Users").child(userId)
+
+                        val newUser = User(
+                            uid = userId, username = username,
+                            search = username.toLowerCase(Locale.ROOT), status = "online"
+                        )
+
+                        dbRef.setValue(newUser)
+                            .addOnCompleteListener {
+                                if (it.isSuccessful) {
+                                    val intentMain = Intent(this, MainActivity::class.java)
+                                    intentMain.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    startActivity(intentMain)
+                                    toast("User baru telah dibuat.")
+                                    finish()
+                                } else {
+                                    it.exception?.message?.let {
+                                        toast("Gagal mendaftarkan User.\nError : $it")
+                                    }
+                                }
                             }
+                    } else {
+                        it.exception?.message?.let {
+                            toast("Gagal mendaftarkan User.\nError : $it")
                         }
                     }
-                } else {
-                    it.exception?.message?.let {
-                        toast("Gagal mendaftarkan User.\nError : $it")
-                    }
                 }
-            }
             return
         }
 

@@ -12,12 +12,14 @@ class WelcomeActivity : AppCompatActivity() {
         // Jika user tidak null atau ada maka lanjut ke MainActivity
         val currentUser = FirebaseAuth.getInstance().currentUser
 
+        // jika currentUser bukan null dan currentUser juga bukan anonymous
         if (currentUser != null && !currentUser.isAnonymous) {
             val intentMain = Intent(this, MainActivity::class.java)
             intentMain.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
             startActivity(intentMain)
             finish()
         }
+
         setContentView(R.layout.activity_welcome)
         btn_login.setOnClickListener {
             val intentLogin = Intent(this, LoginActivity::class.java)

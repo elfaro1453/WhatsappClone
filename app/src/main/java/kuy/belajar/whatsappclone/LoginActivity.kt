@@ -52,9 +52,11 @@ class LoginActivity : AppCompatActivity() {
 
             return
         }
-        val message =
-            if (email.isBlank()) "Email" else "Password "
+        // logika : jika email yang kosong maka tampil toast email tidak boleh kosong
+        // selainnya maka tampil toast Password tidak boleh kosong
+        val message = if (email.isBlank()) "Email " else "Password "
         toast("$message tidak boleh kosong")
+        // Pertanyaan : bagaimana jika email dan password yang kosong ?
     }
 
 }
