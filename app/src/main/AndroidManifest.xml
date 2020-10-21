@@ -14,7 +14,8 @@
         android:theme="@style/AppTheme">
         <activity
             android:name=".MessageChatActivity"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:theme="@style/AppTheme.NoActionBar"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".WelcomeActivity"
             android:theme="@style/AppTheme.NoActionBar">
@@ -31,10 +32,10 @@
         <activity
             android:name=".RegisterActivity"
             android:label="@string/register"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+            android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".MainActivity"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+            android:theme="@style/AppTheme.NoActionBar" />
 
         <meta-data
             android:name="preloaded_fonts"

@@ -140,6 +140,14 @@ class MessageChatActivity : AppCompatActivity() {
             adapter = chatAdapter
             setHasFixedSize(true)
             layoutManager = LinearLayoutManager(this@MessageChatActivity)
+            addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+                // Wait till recycler_view will update itself and then scroll to the end.
+                post {
+                    adapter?.itemCount?.takeIf { it > 0 }?.let {
+                        scrollToPosition(it - 1)
+                    }
+                }
+            }
         }
 
         val receiverRef = dbRef.child("Users").child(receiverID)
