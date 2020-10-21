@@ -5,7 +5,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.chat_item_right.view.*
 import kuy.belajar.whatsappclone.MessageChatActivity.Companion.IS_SEEN_FALSE
-import kuy.belajar.whatsappclone.MessageChatActivity.Companion.SEND_IMAGE
 import kuy.belajar.whatsappclone.model.Chat
 
 /**
@@ -15,7 +14,7 @@ class ChatItemRightVH(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
     fun bind(chat: Chat) {
         itemView.run {
-            if (chat.message != SEND_IMAGE) {
+            if (chat.message.isNotBlank()) {
                 sent_image.visibility = View.GONE
 
                 text_message.text = chat.message

@@ -19,7 +19,6 @@ import kuy.belajar.whatsappclone.recyclerview.ChatItemAdapter
 
 class MessageChatActivity : AppCompatActivity() {
     companion object {
-        const val SEND_IMAGE = "RANDOMSTRING-OR_WHATEVER"
         const val IS_SEEN_FALSE = "false"
     }
 
@@ -83,9 +82,9 @@ class MessageChatActivity : AppCompatActivity() {
 
         chatListListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                val chatList = arrayListOf<Chat>()
                 if (snapshot.exists()) {
                     if (snapshot.hasChildren()) {
-                        val chatList = arrayListOf<Chat>()
                         snapshot.children.forEach {
                             val chat = it.getValue(Chat::class.java) as Chat
                             if (chat.receiver == senderID && chat.sender == receiverID
@@ -95,6 +94,8 @@ class MessageChatActivity : AppCompatActivity() {
                             }
                             chatAdapter.addChats(chatList, receiverImage)
                         }
+                    } else {
+                        chatAdapter.addChats(chatList, receiverImage)
                     }
                 }
             }
@@ -126,6 +127,7 @@ class MessageChatActivity : AppCompatActivity() {
                 clearFocus()
             }
         }
+
         attach_image.setOnClickListener {
             val intent = Intent()
             intent.type = "image/*"
@@ -211,7 +213,7 @@ class MessageChatActivity : AppCompatActivity() {
                         val chat = Chat(
                             sender = senderID,
                             receiver = receiverID,
-                            message = SEND_IMAGE,
+                            message = "",
                             isSeen = IS_SEEN_FALSE,
                             url = downloadUrl,
                             messageID = messageId

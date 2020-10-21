@@ -15,7 +15,7 @@ class ChatItemLeftVH(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
     fun bind(chat: Chat, imageUrl: String) {
         itemView.run {
-            if (chat.message != MessageChatActivity.SEND_IMAGE) {
+            if (chat.message.isNotBlank()) {
                 sent_image.visibility = View.GONE
 
                 text_message.text = chat.message
