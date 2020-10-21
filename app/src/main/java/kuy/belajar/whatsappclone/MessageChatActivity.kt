@@ -5,6 +5,7 @@ import android.app.ProgressDialog
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.*
@@ -12,21 +13,30 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_message_chat.*
-import kuy.belajar.whatsappclone.model.MessageModel
+import kuy.belajar.whatsappclone.model.Chat
 import kuy.belajar.whatsappclone.model.User
+import kuy.belajar.whatsappclone.recyclerview.ChatItemAdapter
 
 class MessageChatActivity : AppCompatActivity() {
+    companion object {
+        const val SEND_IMAGE = "RANDOMSTRING-OR_WHATEVER"
+        const val IS_SEEN_FALSE = "false"
+    }
+
     private lateinit var receiverID: String
     private lateinit var senderID: String
     private lateinit var dbRef: DatabaseReference
     private lateinit var userRef: DatabaseReference
     private lateinit var storageRef: StorageReference
+    private lateinit var chatsRef: DatabaseReference
     private lateinit var chatSenderRef: DatabaseReference
     private lateinit var chatReceiverRef: DatabaseReference
     private lateinit var userListener: ValueEventListener
     private lateinit var chatSenderListener: ValueEventListener
+    private lateinit var chatListListener: ValueEventListener
     private val requestCodeActivity = 438
     private var firebaseUser: FirebaseUser? = null
+    private lateinit var chatAdapter: ChatItemAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,7 +45,9 @@ class MessageChatActivity : AppCompatActivity() {
         supportActionBar?.setDisplayShowTitleEnabled(false)
 
         receiverID = intent.getStringExtra("visit_id") as String
+        chatAdapter = ChatItemAdapter(receiverID)
         firebaseUser = FirebaseAuth.getInstance().currentUser
+        senderID = firebaseUser?.uid as String
         dbRef = FirebaseDatabase.getInstance().reference
         userRef = dbRef.child("Users").child(senderID)
         storageRef = FirebaseStorage.getInstance().reference.child("Chat Images")
@@ -59,6 +71,27 @@ class MessageChatActivity : AppCompatActivity() {
                     chatSenderRef.child("id").setValue(receiverID)
                 }
                 chatReceiverRef.child("id").setValue(senderID)
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        }
+
+        chatListListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    if (snapshot.hasChildren()) {
+                        val chatList = arrayListOf<Chat>()
+                        snapshot.children.forEach {
+                            val chat = it.getValue(Chat::class.java) as Chat
+                            if (chat.receiver == senderID && chat.sender == receiverID
+                                || chat.receiver == receiverID && chat.sender == senderID
+                            ) {
+                                chatList.add(chat)
+                            }
+                            chatAdapter.addChats(chatList)
+                        }
+                    }
+                }
             }
 
             override fun onCancelled(error: DatabaseError) {}
@@ -96,8 +129,17 @@ class MessageChatActivity : AppCompatActivity() {
             }
         }
 
+        rv_chat.run {
+            adapter = chatAdapter
+            setHasFixedSize(true)
+            layoutManager = LinearLayoutManager(this@MessageChatActivity)
+        }
+
         val receiverRef = dbRef.child("Users").child(receiverID)
         receiverRef.addListenerForSingleValueEvent(userListener)
+
+        chatsRef = FirebaseDatabase.getInstance().reference.child("Chats")
+        chatsRef.addValueEventListener(chatListListener)
     }
 
     override fun onStart() {
@@ -151,15 +193,15 @@ class MessageChatActivity : AppCompatActivity() {
                 }.addOnCompleteListener { taskUpload ->
                     if (taskUpload.isSuccessful) {
                         val downloadUrl = taskUpload.result.toString()
-                        val messageModel = MessageModel(
+                        val chat = Chat(
                             sender = senderID,
                             receiver = receiverID,
-                            message = "Sent you an image",
-                            isSeen = "false",
+                            message = SEND_IMAGE,
+                            isSeen = IS_SEEN_FALSE,
                             url = downloadUrl,
                             messageID = messageId
                         )
-                        dbRef.child("Chats").child(messageId).setValue(messageModel)
+                        dbRef.child("Chats").child(messageId).setValue(chat)
                             .addOnCompleteListener {
                                 if (it.isSuccessful) {
                                     chatSenderRef.addListenerForSingleValueEvent(chatSenderListener)
@@ -175,15 +217,15 @@ class MessageChatActivity : AppCompatActivity() {
     private fun sendMessageToUser(message: String) {
         val messageKey = dbRef.push().key
         messageKey?.let {
-            val messageModel = MessageModel(
+            val chat = Chat(
                 sender = senderID,
                 receiver = receiverID,
                 message = message,
-                isSeen = "false",
+                isSeen = IS_SEEN_FALSE,
                 url = "",
                 messageID = it
             )
-            dbRef.child("Chats").child(it).setValue(messageModel)
+            dbRef.child("Chats").child(it).setValue(chat)
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful) {
                         chatSenderRef.addListenerForSingleValueEvent(chatSenderListener)
@@ -192,4 +234,8 @@ class MessageChatActivity : AppCompatActivity() {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        chatsRef.removeEventListener(chatListListener)
+    }
 }
