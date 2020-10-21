@@ -30,7 +30,8 @@ class ChatItemLeftVH(itemView: View) : RecyclerView.ViewHolder(itemView) {
             }
             text_seen.visibility =
                 if (chat.isSeen != MessageChatActivity.IS_SEEN_FALSE) View.VISIBLE else View.GONE
-            if (imageUrl.isNotBlank()) Picasso.get().load(imageUrl).centerCrop().into(profile_image)
+            if (imageUrl.isNotBlank()) Picasso.get().load(imageUrl).fit().centerCrop()
+                .into(profile_image)
         }
     }
 }

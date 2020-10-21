@@ -15,9 +15,9 @@ class LoginActivity : AppCompatActivity() {
         setContentView(R.layout.activity_login)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        mAuth = FirebaseAuth.getInstance()
 
         btn_login.setOnClickListener {
+            mAuth = FirebaseAuth.getInstance()
             val email = input_email.text.toString()
             val password = input_password.text.toString()
             loginUser(email, password)

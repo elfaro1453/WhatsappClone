@@ -13,9 +13,10 @@ class ChatItemAdapter(val receiverID: String) : RecyclerView.Adapter<RecyclerVie
     private val arrayChat = arrayListOf<Chat>()
     private var imageUrl = ""
 
-    fun addChats(chats: List<Chat>) {
+    fun addChats(chats: List<Chat>, receiverImage: String) {
         arrayChat.clear()
         arrayChat.addAll(chats)
+        imageUrl = receiverImage
         notifyDataSetChanged()
     }
 

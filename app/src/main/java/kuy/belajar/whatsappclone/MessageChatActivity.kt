@@ -34,9 +34,11 @@ class MessageChatActivity : AppCompatActivity() {
     private lateinit var userListener: ValueEventListener
     private lateinit var chatSenderListener: ValueEventListener
     private lateinit var chatListListener: ValueEventListener
+    private lateinit var chatAdapter: ChatItemAdapter
     private val requestCodeActivity = 438
     private var firebaseUser: FirebaseUser? = null
-    private lateinit var chatAdapter: ChatItemAdapter
+    private var receiverImage = ""
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,8 +59,11 @@ class MessageChatActivity : AppCompatActivity() {
                 if (snapshot.exists()) {
                     val user = snapshot.getValue(User::class.java) as User
                     user_name.text = user.username
-                    if (user.profile.isNotBlank()) Picasso.get().load(user.profile)
-                        .placeholder(R.drawable.ic_profile).into(profile_image)
+                    if (user.profile.isNotBlank()) {
+                        receiverImage = user.profile
+                        Picasso.get().load(user.profile)
+                            .placeholder(R.drawable.ic_profile).into(profile_image)
+                    }
                 }
             }
 
@@ -88,7 +93,7 @@ class MessageChatActivity : AppCompatActivity() {
                             ) {
                                 chatList.add(chat)
                             }
-                            chatAdapter.addChats(chatList)
+                            chatAdapter.addChats(chatList, receiverImage)
                         }
                     }
                 }
@@ -109,24 +114,26 @@ class MessageChatActivity : AppCompatActivity() {
                 .child("ChatList")
                 .child(receiverID)
                 .child(senderID)
+        }
 
-            send_message.setOnClickListener { view ->
-                val message = text_message.text.toString()
+        send_message.setOnClickListener {
+            input_text_message.run {
+                val message = this.text.toString()
                 if (message.isNotBlank()) {
                     sendMessageToUser(message)
                 }
-                text_message.text.clear()
-                text_message.clearFocus()
+                text.clear()
+                clearFocus()
             }
-            attach_image.setOnClickListener {
-                val intent = Intent()
-                intent.type = "image/*"
-                intent.action = Intent.ACTION_GET_CONTENT
-                startActivityForResult(
-                    Intent.createChooser(intent, "Pick Image"),
-                    requestCodeActivity
-                )
-            }
+        }
+        attach_image.setOnClickListener {
+            val intent = Intent()
+            intent.type = "image/*"
+            intent.action = Intent.ACTION_GET_CONTENT
+            startActivityForResult(
+                Intent.createChooser(intent, "Pick Image"),
+                requestCodeActivity
+            )
         }
 
         rv_chat.run {
