@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.*
@@ -16,6 +17,8 @@ import kotlinx.android.synthetic.main.activity_message_chat.*
 import kuy.belajar.whatsappclone.model.Chat
 import kuy.belajar.whatsappclone.model.User
 import kuy.belajar.whatsappclone.recyclerview.ChatItemAdapter
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.math.absoluteValue
 
 class MessageChatActivity : AppCompatActivity() {
     companion object {
@@ -37,6 +40,7 @@ class MessageChatActivity : AppCompatActivity() {
     private val requestCodeActivity = 438
     private var firebaseUser: FirebaseUser? = null
     private var receiverImage = ""
+    private var verticalScrollOffset = AtomicInteger(0)
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,6 +48,7 @@ class MessageChatActivity : AppCompatActivity() {
         setContentView(R.layout.activity_message_chat)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(false)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         receiverID = intent.getStringExtra("visit_id") as String
         chatAdapter = ChatItemAdapter(receiverID)
@@ -90,14 +95,16 @@ class MessageChatActivity : AppCompatActivity() {
                             if (chat.receiver == senderID && chat.sender == receiverID
                                 || chat.receiver == receiverID && chat.sender == senderID
                             ) {
+                                if (chat.receiver == senderID && chat.sender == receiverID) {
+                                    chat.isSeen == "true"
+                                }
                                 chatList.add(chat)
                             }
-                            chatAdapter.addChats(chatList, receiverImage)
                         }
-                    } else {
-                        chatAdapter.addChats(chatList, receiverImage)
                     }
                 }
+                chatAdapter.addChats(chatList, receiverImage)
+                rv_chat.scrollToPosition(chatList.size - 1);
             }
 
             override fun onCancelled(error: DatabaseError) {}
@@ -141,15 +148,50 @@ class MessageChatActivity : AppCompatActivity() {
         rv_chat.run {
             adapter = chatAdapter
             setHasFixedSize(true)
-            layoutManager = LinearLayoutManager(this@MessageChatActivity)
-            addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-                // Wait till recycler_view will update itself and then scroll to the end.
-                post {
-                    adapter?.itemCount?.takeIf { it > 0 }?.let {
-                        scrollToPosition(it - 1)
+            layoutManager = LinearLayoutManager(this@MessageChatActivity).apply {
+                orientation = LinearLayoutManager.VERTICAL
+                stackFromEnd = true
+            }
+
+            addOnLayoutChangeListener { _, _, _, _, bottom, _, _, _, oldBottom ->
+                val y = oldBottom - bottom
+                if (y.absoluteValue > 0) {
+                    post {
+                        if (y > 0 || verticalScrollOffset.get().absoluteValue >= y.absoluteValue) {
+                            scrollBy(0, y)
+                        } else {
+                            scrollBy(0, verticalScrollOffset.get())
+                        }
                     }
                 }
             }
+
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                var state = AtomicInteger(RecyclerView.SCROLL_STATE_IDLE)
+
+                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                    state.compareAndSet(RecyclerView.SCROLL_STATE_IDLE, newState)
+                    when (newState) {
+                        RecyclerView.SCROLL_STATE_IDLE -> {
+                            if (!state.compareAndSet(RecyclerView.SCROLL_STATE_SETTLING, newState)) {
+                                state.compareAndSet(RecyclerView.SCROLL_STATE_DRAGGING, newState)
+                            }
+                        }
+                        RecyclerView.SCROLL_STATE_DRAGGING -> {
+                            state.compareAndSet(RecyclerView.SCROLL_STATE_IDLE, newState)
+                        }
+                        RecyclerView.SCROLL_STATE_SETTLING -> {
+                            state.compareAndSet(RecyclerView.SCROLL_STATE_DRAGGING, newState)
+                        }
+                    }
+                }
+
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    if (state.get() != RecyclerView.SCROLL_STATE_IDLE) {
+                        verticalScrollOffset.getAndAdd(dy)
+                    }
+                }
+            })
         }
 
         val receiverRef = dbRef.child("Users").child(receiverID)
@@ -157,6 +199,15 @@ class MessageChatActivity : AppCompatActivity() {
 
         chatsRef = FirebaseDatabase.getInstance().reference.child("Chats")
         chatsRef.addValueEventListener(chatListListener)
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return super.onSupportNavigateUp()
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
     }
 
     override fun onStart() {
